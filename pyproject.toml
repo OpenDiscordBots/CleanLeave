@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "cleanleave"
+version = "1.0.0"
+description = "Automatically remove user join messages when the user leaves the server"
+authors = ["vcokltfre <vcokltfre@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/opendiscordbots/CleanLeave"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+loguru = "^0.5.3"
+taskipy = "^1.8.2"
+python-dotenv = "^0.19.0"
+corded = "^1.5.1"
+asyncpg = "^0.24.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.taskipy.tasks]
+start = "python3 -m src"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
