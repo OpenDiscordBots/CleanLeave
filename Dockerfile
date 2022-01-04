@@ -1,6 +1,8 @@
-FROM python:3.9-slim-buster
+FROM python:3.10-slim-buster
 
 WORKDIR /bot
+
+RUN apt update && apt install -y gcc
 
 RUN pip install poetry
 

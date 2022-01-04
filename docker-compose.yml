@@ -9,16 +9,3 @@ services:
       - postgres
     depends_on:
       - postgres
-    environment:
-      PG_URI: postgres://root:password@postgres:5432/cleanleave
-
-  postgres:
-    image: postgres
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: root
-      POSTGRES_DB: cleanleave
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - ./pg_data:/var/lib/postgresql/data

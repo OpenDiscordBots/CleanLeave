@@ -1,62 +1,53 @@
-from asyncio import run
-from dotenv import load_dotenv
+from json import dumps
 from os import environ as env
 
-from bauxite import HTTPClient, GatewayClient, Route
+from disnake import Client, Message, MessageType, Intents, Member
+from disnake.http import Route
+from dotenv import load_dotenv
 from loguru import logger
-
-from .db import Database
+from libodb import APIClient
 
 load_dotenv()
 
-http = HTTPClient(env["TOKEN"])
-db = Database()
+intents = Intents.none()
+intents.guilds = True
+intents.guild_messages = True
+intents.members = True
 
-async def on_message_create(data: dict) -> None:
-    if data["type"] == 7:
-        message = int(data["id"])
-        channel = int(data["channel_id"])
-        guild = int(data["guild_id"])
-        member = int(data["author"]["id"])
+client = Client(intents=intents)
+api = APIClient(env["API_TOKEN"], kv_ns="cleanleave")
 
-        await db.member_join(message, channel, guild, member)
+@client.event
+async def on_message(message: Message) -> None:
+    if message.type != MessageType.new_member:
+        return
 
-async def on_member_leave(data: dict) -> None:
-    guild = int(data["guild_id"])
-    member = int(data["user"]["id"])
+    assert message.guild
 
-    msg = await db.get_join_message(guild, member)
+    await api.kv_set(f"{message.guild.id}.{message.author.id}", dumps({
+        "message": message.id,
+        "channel": message.channel.id
+    }))
+
+@client.event
+async def on_member_remove(member: Member) -> None:
+    try:
+        msg = await api.kv_get(f"{member.guild.id}.{member.id}")
+    except Exception as e:
+        logger.error(e)
+        return
 
     if not msg:
         return
 
-    logger.info(f"Removing join message for {member} in guild {guild}")
+    logger.info(f"Removing join message for {member.id} in guild {member.guild.id}: {type(msg)}")
 
-    route = Route("DELETE", "/channels/{channel_id}/messages/{message_id}", message_id=msg[0], channel_id=msg[1])
+    route = Route("DELETE", "/channels/{channel_id}/messages/{message_id}", message_id=msg["message"], channel_id=msg["channel"])
 
-    await http.request(route)
-
-async def dispatch(_shard, _direction, data: dict) -> None:
-    if not (t := data.get("t")):
-        return
-
-    if t == "MESSAGE_CREATE":
-        await on_message_create(data)
-        return
-
-    if t == "GUILD_MEMBER_REMOVE":
-        await on_member_leave(data)
-        return
-
-async def main() -> None:
-    await db.ainit()
-
-    gateway = GatewayClient(http, 515, callbacks=[dispatch])
-
-    await gateway.spawn_shards()
+    await client.http.request(route)
 
 
 if __name__ == "__main__":
     logger.info("Starting the bot...")
 
-    run(main())
+    client.run(env["TOKEN"])
