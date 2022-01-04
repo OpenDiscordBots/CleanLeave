@@ -5,7 +5,3 @@ services:
     build: .
     restart: always
     env_file: .env
-    links:
-      - postgres
-    depends_on:
-      - postgres
