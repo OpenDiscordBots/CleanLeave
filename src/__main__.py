@@ -25,7 +25,7 @@ async def on_message(message: Message) -> None:
 
     assert message.guild
 
-    if message.author.current_timeout and message.author.current_timeout > datetime.utcnow():
+    if message.author.current_timeout and message.author.current_timeout.timestamp() > datetime.utcnow().timestamp():
         await message.delete()
         return
 
