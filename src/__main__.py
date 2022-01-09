@@ -1,3 +1,4 @@
+from datetime import datetime
 from json import dumps
 from os import environ as env
 
@@ -23,6 +24,10 @@ async def on_message(message: Message) -> None:
         return
 
     assert message.guild
+
+    if message.author.current_timeout and message.author.current_timeout > datetime.utcnow():
+        await message.delete()
+        return
 
     await api.kv_set(f"{message.guild.id}.{message.author.id}", dumps({
         "message": message.id,
